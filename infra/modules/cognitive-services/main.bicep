@@ -109,7 +109,7 @@ var allRoleAssignments = concat(empty(userObjectId) ? [] : [
 module aiServices 'service.bicep' = {
   name: take('${name}-ai-services-deployment', 64)
   #disable-next-line no-unnecessary-dependson
-  dependsOn: [cognitiveServicesPrivateDnsZone, openAiPrivateDnsZone] // required due to optional flags that could change dependency
+  dependsOn: networkIsolation ? [cognitiveServicesPrivateDnsZone, openAiPrivateDnsZone] : []
   params: {
     name: 'cog${name}${resourceToken}'
     location: location
@@ -123,7 +123,6 @@ module aiServices 'service.bicep' = {
       openAiPrivateDnsZone.outputs.resourceId
     ] : []
     logAnalyticsWorkspaceResourceId: logAnalyticsWorkspaceResourceId
-    
     aiModelDeployments: aiModelDeployments
     roleAssignments: allRoleAssignments
     tags: tags

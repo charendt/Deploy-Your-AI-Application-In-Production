@@ -30,16 +30,10 @@ param defaultProjectName string = name
 param defaultProjectDisplayName string = name
 param defaultProjectDescription string = 'This is a sample project for AI Foundry.'
 
-// Switching to Azure Verified Modules for Foundry Account
-// resource foundryAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = {
-module foundryAccount 'br/public:avm/res/cognitive-services/account:0.11.0' = {
-  params: {
-    name: aiServicesName
-    location: location
-    sku: 'S0'
-    kind: 'AIServices'    
+
+resource foundryAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = {
+  name: aiServicesName
   }
-}
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' existing = {
   name: storageName
@@ -53,14 +47,9 @@ resource cosmosDBAccount 'Microsoft.DocumentDB/databaseAccounts@2025-05-01-previ
   name: cosmosDBname
 }
 
-resource foundryResource 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = {
-  scope: resourceGroup()
-  name: aiServicesName
-}
-
 resource project 'Microsoft.CognitiveServices/accounts/projects@2025-04-01-preview' = {
   name: defaultProjectName
-  parent: foundryResource
+  parent: foundryAccount
   location: location
   identity: {
     type: 'SystemAssigned'
