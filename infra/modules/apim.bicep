@@ -37,6 +37,9 @@ param virtualNetworkSubnetResourceId string
 @description('Optional tags to be applied to the resources.')
 param tags object = {}
 
+@description('Required. The backend URL for the AI Foundry API.')
+param foundryBackendUrl string
+
 
 module apiManagementService 'br/public:avm/res/api-management/service:0.9.1' = {
   name: take('${name}-apim-deployment', 64)
@@ -54,21 +57,28 @@ module apiManagementService 'br/public:avm/res/api-management/service:0.9.1' = {
     apis: [
       {
         apiVersionSet: {
-          name: 'echo-version-set'
+          name: 'ai-foundry-version-set'
           properties: {
-            description: 'An echo API version set'
-            displayName: 'Echo version set'
+            description: 'An AI Foundry API version set'
+            displayName: 'AI Foundry version set'
             versioningScheme: 'Segment'
           }
         }
-        description: 'An echo API service'
-        displayName: 'Echo API'
-        name: 'echo-api'
-        path: 'echo'
+        description: 'An AI Foundry API service'
+        displayName: 'AI Foundry API'
+        name: 'ai-foundry-api'
+        path: 'ai-foundry'
         protocols: [
           'https'
         ]
-        serviceUrl: 'https://echoapi.cloudapp.net/api'
+        serviceUrl: foundryBackendUrl
+      }
+    ]
+    backends: [
+      {
+        name: 'ai-foundry-backend'
+        description: 'AI Foundry backend service'
+        url: foundryBackendUrl
       }
     ]
     customProperties: {
@@ -97,12 +107,12 @@ module apiManagementService 'br/public:avm/res/api-management/service:0.9.1' = {
       {
         apis: [
           {
-            name: 'echo-api'
+            name: 'ai-foundry-api'
           }
         ]
         approvalRequired: true
-        description: 'This is an echo API'
-        displayName: 'Echo API'
+        description: 'This is an AI Foundry API'
+        displayName: 'AI Foundry API'
         groups: [
           {
             name: 'developers'
@@ -122,6 +132,7 @@ module apiManagementService 'br/public:avm/res/api-management/service:0.9.1' = {
     ]
   }
 }
+
 
 module apiManagementPrivateDnsZone 'br/public:avm/res/network/private-dns-zone:0.7.0' = if (networkIsolation)  {
   name: 'private-dns-apim-deployment'
@@ -145,7 +156,7 @@ module apimPrivateEndpoint 'br/public:avm/res/network/private-endpoint:0.11.0' =
     privateDnsZoneGroup: {
       privateDnsZoneGroupConfigs: [
         {
-          privateDnsZoneResourceId: apiManagementPrivateDnsZone.outputs.resourceId
+          privateDnsZoneResourceId: apiManagementPrivateDnsZone!.outputs.resourceId
         }
       ]
     }
@@ -165,6 +176,9 @@ module apimPrivateEndpoint 'br/public:avm/res/network/private-endpoint:0.11.0' =
 
 output resourceId string = apiManagementService.outputs.resourceId
 output name string = apiManagementService.outputs.name
-output privateEndpointId string = apimPrivateEndpoint.outputs.resourceId
-output privateEndpointName string = apimPrivateEndpoint.outputs.name
+// Only output private endpoint information when network isolation is enabled
+// Provide private endpoint outputs when created
+// Only output private endpoint information when network isolation is enabled
+output privateEndpointId string = networkIsolation ? apimPrivateEndpoint!.outputs.resourceId : ''
+output privateEndpointName string = networkIsolation ? apimPrivateEndpoint!.outputs.name : ''
 

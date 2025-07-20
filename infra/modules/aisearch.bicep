@@ -17,7 +17,7 @@ param virtualNetworkSubnetResourceId string
 param logAnalyticsWorkspaceResourceId string
 
 @description('Specifies whether network isolation is enabled. This will create a private endpoint for the AI Search resource and link the private DNS zone.')
-param networkIsolation bool = true
+param networkIsolation bool
 
 import { roleAssignmentType } from 'br/public:avm/utl/types/avm-common-types:0.5.1'
 @description('Optional. Array of role assignments to create.')
@@ -40,8 +40,8 @@ var nameFormatted = take(toLower(name), 60)
 
 module aiSearch 'br/public:avm/res/search/search-service:0.10.0' = {
   name: take('${nameFormatted}-search-services-deployment', 64)
-  #disable-next-line no-unnecessary-dependson
-  dependsOn: [privateDnsZone] // required due to optional flags that could change dependency
+  // Ensure dependency on private DNS zone only when network isolation is enabled
+  dependsOn: networkIsolation ? [ privateDnsZone ] : []
   params: {
       name: nameFormatted
       location: location
@@ -68,7 +68,8 @@ module aiSearch 'br/public:avm/res/search/search-service:0.10.0' = {
           privateDnsZoneGroup: {
             privateDnsZoneGroupConfigs: [
               {
-                privateDnsZoneResourceId: privateDnsZone.outputs.resourceId
+                // Non-null assertion since this module only exists when networkIsolation is true
+                privateDnsZoneResourceId: privateDnsZone!.outputs.resourceId
               }
             ]
           }

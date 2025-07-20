@@ -389,6 +389,7 @@ module apim 'modules/apim.bicep' = if (apiManagementEnabled) {
     logAnalyticsWorkspaceResourceId: logAnalyticsWorkspaceResourceId
     virtualNetworkResourceId: networkIsolation ? network.outputs.resourceId : ''
     virtualNetworkSubnetResourceId: networkIsolation ? network.outputs.defaultSubnetResourceId : ''
+    foundryBackendUrl: cognitiveServices.outputs.aiServicesEndpoint
     tags: allTags
   }
 }
