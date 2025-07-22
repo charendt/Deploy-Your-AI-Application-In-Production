@@ -10,6 +10,9 @@ param publisherName string
 @description('The email address of the API Management publisher.')
 param publisherEmail string
 
+@description('The XML content for the API policy')
+param policyXml string
+
 @description('Optional. The pricing tier of this API Management service.')
 @allowed([
   'Consumption'
@@ -40,6 +43,20 @@ param tags object = {}
 @description('Required. The backend URL for the AI Foundry API.')
 param foundryBackendUrl string
 
+@description('The inference API type')
+@allowed([
+  'AzureOpenAI'
+  'AzureAI'
+  'OpenAI'
+])
+param inferenceAPIType string = 'AzureOpenAI'
+
+@description('The name of the Inference backend pool.')
+param inferenceBackendPoolName string = 'ai-foundry-backend'
+
+var updatedPolicyXml = replace(policyXml, '{backend-id}', inferenceBackendPoolName)
+
+var endpointPath = (inferenceAPIType == 'AzureOpenAI') ? 'openai' : (inferenceAPIType == 'AzureAI') ? 'models' : ''
 
 module apiManagementService 'br/public:avm/res/api-management/service:0.9.1' = {
   name: take('${name}-apim-deployment', 64)
@@ -67,18 +84,25 @@ module apiManagementService 'br/public:avm/res/api-management/service:0.9.1' = {
         description: 'An AI Foundry API service'
         displayName: 'AI Foundry API'
         name: 'ai-foundry-api'
-        path: 'ai-foundry'
+        path: 'ai-foundry/${endpointPath}'
         protocols: [
           'https'
         ]
-        serviceUrl: foundryBackendUrl
+        policies: [
+          {
+            format: 'rawxml'
+            value: updatedPolicyXml
+          }
+        ]
+        value: string((inferenceAPIType == 'AzureOpenAI') ? loadJsonContent('./specs/AIFoundryOpenAI.json') : (inferenceAPIType == 'AzureAI') ? loadJsonContent('./specs/AIFoundryAzureAI.json') : (inferenceAPIType == 'OpenAI') ? loadJsonContent('./specs/AIFoundryAzureAI.json') : loadJsonContent('./specs/PassThrough.json')) 
+        serviceUrl: 'https://ai.azure.com/'
       }
     ]
     backends: [
       {
-        name: 'ai-foundry-backend'
+        name: inferenceBackendPoolName
         description: 'AI Foundry backend service'
-        url: foundryBackendUrl
+        url: '${foundryBackendUrl}/${endpointPath}'
       }
     ]
     customProperties: {

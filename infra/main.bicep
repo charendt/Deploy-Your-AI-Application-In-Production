@@ -59,6 +59,14 @@ param apiManagementEnabled bool
 @description('Specifies the publisher email for the API Management service. Defaults to admin@[name].com.')
 param apiManagementPublisherEmail string = 'admin@${name}.com'
 
+@description('Specifies the type of inference API to expose through API Management.')
+@allowed([
+  'AzureOpenAI'
+  'AzureAI'
+  'OpenAI'
+])
+param inferenceAPIType string = 'AzureOpenAI'
+
 @description('Specifies whether network isolation is enabled. When true, Foundry and related components will be deployed, network access parameters will be set to Disabled.')
 param networkIsolation bool
 
@@ -390,6 +398,8 @@ module apim 'modules/apim.bicep' = if (apiManagementEnabled) {
     virtualNetworkResourceId: networkIsolation ? network.outputs.resourceId : ''
     virtualNetworkSubnetResourceId: networkIsolation ? network.outputs.defaultSubnetResourceId : ''
     foundryBackendUrl: cognitiveServices.outputs.aiServicesEndpoint
+    policyXml: loadTextContent('policy.xml')
+    inferenceAPIType: inferenceAPIType
     tags: allTags
   }
 }
