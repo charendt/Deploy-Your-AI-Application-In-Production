@@ -200,9 +200,10 @@ module apimPrivateEndpoint 'br/public:avm/res/network/private-endpoint:0.11.0' =
 
 output resourceId string = apiManagementService.outputs.resourceId
 output name string = apiManagementService.outputs.name
-// Only output private endpoint information when network isolation is enabled
 // Provide private endpoint outputs when created
 // Only output private endpoint information when network isolation is enabled
 output privateEndpointId string = networkIsolation ? apimPrivateEndpoint!.outputs.resourceId : ''
 output privateEndpointName string = networkIsolation ? apimPrivateEndpoint!.outputs.name : ''
+output principalId string? = apiManagementService.outputs.?systemAssignedMIPrincipalId
+
 

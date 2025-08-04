@@ -25,16 +25,29 @@ param searchEnabled bool
 @description('Azure Search Service Name')
 param nameFormatted string
 
+@description('APIM Pricipal Id')
+param  apimPrincipalId string
+
 @description('Name of the first project')
 param defaultProjectName string = name
 param defaultProjectDisplayName string = name
 param defaultProjectDescription string = 'This is a sample project for AI Foundry.'
 
-
 resource foundryAccount 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' existing = {
   name: aiServicesName
   }
 
+// assign the APIM principal the "AI User" role on the Foundry account
+resource apimRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(apimPrincipalId)) {
+  scope: foundryAccount
+  name: guid(foundryAccount.id, apimPrincipalId, 'AI User')
+  properties: {
+    principalId: apimPrincipalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')
+  }
+}
+  
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' existing = {
   name: storageName
 }
